@@ -36,7 +36,7 @@ typedef struct {
   Block blocks[BLOCKS_IN_MEMORY];
 } MainMem;
 
-MainMem mm;
+extern MainMem mm;
 
 enum cache_org {DIRECT = 0, FULLY, TWOWAY}; // FULLY=1, TWOWAY=2
 
@@ -50,12 +50,13 @@ typedef struct {
   Cache myCache;
 } Memory;
 
-Memory m;
+extern Memory m;
 
 int getData (int address); // load
 void putData (int address, int value); // store
 void resetClock(void); // set timer to zero
 void showCacheAddress(); // show cache contents
 void printCacheOrg (int org); // print cache org
+void copyblock(int cache_index, int mem_index);
 
 #endif
