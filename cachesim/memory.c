@@ -40,7 +40,7 @@ int getData (int address)                // load
 int org=1;
 // mm is the main memory
 // m is the cache
-  int data,block,index;
+int data,block,index;
 //printf("Switch case\n");
     switch(cache_org)
 {
@@ -53,9 +53,29 @@ int org=1;
        int main_block_index= address/4;                 // gives the block address of the main memory
        int cache_block_index=main_block_index%8;        // gives the block position of data in the cache
        int offset=address%4;                            // gives the exact position of address within a         
-       int pos_in_cache = cache_block_index*4+offset;
+       int tag=;
         //check if the data is valid in cache
-        if(m.myCache.cblocks[pos_in_cache] != mm.blocks[main_block_index].data[offset])
+        
+        if(m.myCache[cache_block_index].last_used != 1)
+            {
+                // copy data to cache
+                copyblock(cache_block_index,main_block_index);
+            }        
+        // check for tag
+        else
+        {
+             if(tag==m.myCache[cache_block_index].tag)
+                {
+                    clockX+=2;
+                    return  m.myCache[cache_block_index].data[offset];         
+                }
+              else
+                {
+                    // replace the block;
+                    copyblock(cache_block_index,main_block_index);
+                }
+        }
+        //if(m.myCache[cache_block_index].cblocks[pos_in_cache] != mm.blocks[main_block_index].data[offset])
         {
             m.myCache.cblocks[pos_in_cache] = mm.blocks[main_block_index].data[offset];
             numMisses++;
@@ -111,23 +131,5 @@ void putData (int address, int value)     // store
 
 void copyblock(int cache_index, int mem_index)
 {
-  switch(cache_org)
-{
-    case 0:
-    // Copyblock from main memory to cache memory for direct mapping 
-
-    break;
-
-    case 1:
-    //Implementing Two Way Associative
-
-    break;
-
-    case 2:
-    //Implementing Fully Associative
-
-    break;
-  
-  
-  
+ 
 }
