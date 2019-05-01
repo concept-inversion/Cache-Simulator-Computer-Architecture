@@ -3,9 +3,8 @@
 unsigned int clockX;
 unsigned int numMisses;
 int cache_org;
-
-//extern Memory m;
-//extern MainMem mm; 
+extern Memory m;
+extern MainMem mm; 
 
 void resetClock()
 {
@@ -50,37 +49,40 @@ switch(cache_org)
 {
   case 0:
   // Implement direct mapping 
-  printf("Direct Mapping\n");
-  printf("%x \n",address);
+  printf("Add: %d \t",address);
   // convert address to hex
    
-  int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
-  int cache_block_index=main_block_index%BLOCKS_IN_CACHE;        // gives the block position of data in the cache
-  int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
-  int tag=address/WORDS_PER_BLOCK;
+   int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
+   int cache_block_index=main_block_index%BLOCKS_IN_CACHE;        // gives the block position of data in the cache
+   int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
+   int tag=address/WORDS_PER_BLOCK;
+   printf("Tag: %d \t",tag);
   //check if the data is valid in cache
      
-  if(m.myCache.cblocks[cache_block_index].last_used != 1)
+  if(m.myCache.cblocks[cache_block_index].valid != 1)
     {
       // copy data to cache
-      printf("Cache empty\n");
-      copyblock(cache_block_index,main_block_index);
+      printf("Cache empty at %d\n",cache_block_index);
+      copyblock(cache_block_index,main_block_index,tag);
       clockX+=100;
+      numMisses+=1;
     }        
   // check for tag
   else
   {
-      printf("data found");
+      printf("check tag at %d\t",cache_block_index);
       if(tag==m.myCache.cblocks[cache_block_index].tag)
           {
+            printf("Hit\n");
             clockX+=2;
             return  m.myCache.cblocks[cache_block_index].data[offset];         
           }
         else
           {
-            printf("Replacing the block\n");
+            printf("MIss\n");
             // replace the block;
-            copyblock(cache_block_index,main_block_index);
+            //copyblock(cache_block_index,main_block_index);
+            numMisses+=1;
             clockX+=100;
           }
   }
@@ -89,7 +91,7 @@ switch(cache_org)
   break;
 
     
-    case 1:
+    case 5:
     // Implement twoway set associative
   printf("2-way Associative Mapping\n");  
   // Implement direct mapping 
@@ -97,42 +99,50 @@ switch(cache_org)
   printf("%x \n",address);
   // convert address to hex
    
-  int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
+  main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
   int cache_set_index=main_block_index%SETS_IN_CACHE;        // gives the block position of data in the cache
-  int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
-  int tag=address/WORDS_PER_BLOCK;
+  offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
+  tag=address/WORDS_PER_BLOCK;
   //check if the data is valid in cache   
-    if(valid_check()==0)
+    if(valid_check(cache_set_index,SETS_IN_CACHE,tag)==0)
       {
-          copyblock(cache_block_index,main_block_index);
-      }        
+          // find the position to replace
+           int pos=search_replace(cache_set_index,SETS_IN_CACHE);
+          //copyblock(pos,main_block_index);
+          clockX+=100;        
+       }        
   
   // check for tag
     else
     {
-      printf("data found");
-      if(tag==m.myCache.cblocks[cache_block_index].tag)
-          {
-            clockX+=2;
-            return  m.myCache.cblocks[cache_block_index].data[offset];         
-          }
-        else
-          {
-            printf("Replacing the block\n");
-            // replace the block;
-            copyblock(cache_block_index,main_block_index);
-            clockX+=100;
-          }
-  }  
+        // return the data from cache TODO
+        clockX+=2;  
+    }  
     break;
 
-    case 2:
+    case 7:
     // Implement fully associative
     //printf("Fully Associative Mapping\n");
+  main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
+  offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
+  tag=address/WORDS_PER_BLOCK;
+  //check if the data is valid in cache   
+    if(valid_check(0,BLOCKS_IN_CACHE,tag)==0)
+      {
+          // find the position to replace
+            int pos=search_replace(0,BLOCKS_IN_CACHE);
+          //copyblock(pos,main_block_index);
+          clockX+=100;        
+       }        
+  
+  // check for tag
+    else
+    {
+        // return the data from cache TODO
+        clockX+=2;  
+    }  
     break;
     
-    default:
-        return NULL;
  } // implement here
   return data;
 }
@@ -140,26 +150,54 @@ switch(cache_org)
 void putData (int address, int value)     // store
 {
   // implement here
-  switch(cache_org)
-{
-    case 0:
-    // Implementing direct mapping 
-
-    break;
-
-    case 1:
-    //Implementing Two Way Associative
-
-    break;
-
-    case 2:
-    //Implementing Fully Associative
-
-    break;
+       int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
+   int cache_block_index=main_block_index%BLOCKS_IN_CACHE;        // gives the block position of data in the cache
+   int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
+   int tag=address/WORDS_PER_BLOCK;
+    m.myCache.cblocks[cache_block_index].data[offset]=value;
+    m.myCache.cblocks[cache_block_index].tag=tag;
+    m.myCache.cblocks[cache_block_index].valid=1;  
+    //printf("write at %d, Tag:%d \n",address,cache_block_index); 
 
 }
 
-void copyblock(int cache_index, int mem_index)
+void copyblock(int cache_index, int mem_index, int tag)
 {
- 
+    //copy data
+    for(int i=0;i<4;i++){
+    m.myCache.cblocks[cache_index].data[i]=mm.blocks[mem_index].data[i];
+    }    
+    // Copy tag    
+    m.myCache.cblocks[cache_index].tag=tag;
+    m.myCache.cblocks[cache_index].valid=1;
+    m.myCache.cblocks[cache_index].last_used=1;
+    
 }
+
+int valid_check(int cache_set_index, int n, int tag)
+{
+    for (int i=0; i<n; i++ )
+    {
+       if(m.myCache.cblocks[cache_set_index+i].valid==1)
+        {
+            // check the tag            
+            if(m.myCache.cblocks[cache_set_index+i].tag == tag)
+                {return 1;}
+    
+        }            
+    }
+    return 0;
+}
+
+int search_replace(int start,int n)
+{
+    int min=0;
+    // find the minimum value
+    for (int i=start; i<n; i++ )
+    {
+        if(m.myCache.cblocks[i].last_used<min)
+        {min=i;}    
+    }
+    return min;
+}
+
