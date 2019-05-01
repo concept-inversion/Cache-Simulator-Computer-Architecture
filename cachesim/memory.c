@@ -55,7 +55,7 @@ switch(cache_org)
    int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
    int cache_block_index=main_block_index%BLOCKS_IN_CACHE;        // gives the block position of data in the cache
    int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
-   int tag=address/WORDS_PER_BLOCK;
+   int tag=address/32;
    printf("Tag: %d \t",tag);
   //check if the data is valid in cache
      
@@ -153,11 +153,11 @@ void putData (int address, int value)     // store
        int main_block_index= address/WORDS_PER_BLOCK;                 // gives the block address of the main memory
    int cache_block_index=main_block_index%BLOCKS_IN_CACHE;        // gives the block position of data in the cache
    int offset=address%WORDS_PER_BLOCK;                            // gives the exact position of address within a         
-   int tag=address/WORDS_PER_BLOCK;
+   int tag=address/32;
     m.myCache.cblocks[cache_block_index].data[offset]=value;
     m.myCache.cblocks[cache_block_index].tag=tag;
     m.myCache.cblocks[cache_block_index].valid=1;  
-    //printf("write at %d, Tag:%d \n",address,cache_block_index); 
+    printf("write at %d, Tag:%d \n",address,cache_block_index); 
 
 }
 
