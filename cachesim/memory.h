@@ -11,6 +11,7 @@
 extern unsigned int clockX;
 extern unsigned int numMisses;
 extern int cache_org;
+extern int COUNTER;
 
 //=================
 //==  Constants
@@ -57,5 +58,5 @@ void resetClock(void); // set timer to zero
 void showCacheAddress(); // show cache contents
 void printCacheOrg (int org); // print cache org
 void copyblock(int cache_index, int mem_index, int tag);
-
+void clearCache();
 #endif
