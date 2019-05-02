@@ -66,13 +66,14 @@ int getData(int address) // load
     int tag = address / WORDS_PER_BLOCK;
     //printf("Tag: %d\t", tag);
     //check if the data is valid in cache
-
+    clockX += 2;    // for cache access
     if (m.myCache.cblocks[cache_block_index].valid != 1)
     {
       // copy data to cache
       //printf("Cache empty at %d\n", cache_block_index);
-      copyblock(cache_block_index, main_block_index, tag);
-      clockX += 100;
+      
+      copyblock(cache_block_index, main_block_index, tag); // copy the data to cache from main memory
+      
       numMisses += 1;
     }
     // check for tag
@@ -82,16 +83,17 @@ int getData(int address) // load
       if (tag == m.myCache.cblocks[cache_block_index].tag)
       {
         //printf("Hit\n");
-        clockX += 2;
+        
         return m.myCache.cblocks[cache_block_index].data[offset];
       }
       else
       {
         //printf("MIss\n");
         // replace the block;
+        
         copyblock(cache_block_index,main_block_index,tag);
+        //clockX+= 2;    // for cache access
         numMisses += 1;
-        clockX += 100;
       }
     }
 
@@ -174,10 +176,11 @@ void putData(int address, int value) // store
     if (m.myCache.cblocks[cache_block_index].valid != 1)
     {
       // copy data to cache
-      
+      clockX+= 2;    // for cache access
+      clockX+=100; // for write to main memory
       copyblock(cache_block_index, main_block_index, tag);
-      clockX+= 100;
       numMisses+= 1;
+      
     }
     // check for tag
     else
@@ -186,16 +189,21 @@ void putData(int address, int value) // store
       if (tag == m.myCache.cblocks[cache_block_index].tag)
       {
         clockX += 2;
+        m.myCache.cblocks[cache_block_index].data[offset]=value;
+        // write blcok to main memory
+        clockX += 100;
       }
       else
       {
         //printf("MIss\n");
-        copyblock(cache_block_index, main_block_index, tag);
+        
+        clockX += 2; // for cache read
+        clockX+=100; // for write to main memory
+        mm.blocks[main_block_index].data[offset]=value;
+        copyblock(cache_block_index, main_block_index, tag); // copy main memory to cache
         numMisses += 1;
-        clockX += 100;
       }
     }
-    m.myCache.cblocks[cache_block_index].data[offset] = value;
   }
 
   else if (cache_org==TWOWAY)
@@ -213,13 +221,12 @@ void putData(int address, int value) // store
       int pos = search_replace(cache_set_index*2, cache_set_index*2+2);
       copyblock(pos,main_block_index,tag);
       m.myCache.cblocks[pos].data[offset] = value;
-      clockX += 100;
       numMisses+=1;
     }
     // check for tag
     else
     {
-      clockX += 2;
+      //clockX += 2;
     }
   }
 
@@ -236,7 +243,7 @@ void putData(int address, int value) // store
       //printf("Miss\t");
       int pos = search_replace(0, BLOCKS_IN_CACHE);
       copyblock(pos,main_block_index,tag);
-      clockX += 100;
+      
     }
 
     // check for tag
@@ -244,7 +251,7 @@ void putData(int address, int value) // store
     {
       // return the data from cache TODO
       //printf("Hit\n");
-      clockX += 2;
+      //clockX += 2;
     }
   }
   
@@ -253,10 +260,10 @@ void putData(int address, int value) // store
 void copyblock(int cache_index, int mem_index, int tag)
 {
   //copy data
+  clockX += 100;
   for (int i = 0; i < 4; i++)
   {
     m.myCache.cblocks[cache_index].data[i] = mm.blocks[mem_index].data[i];
-    clockX += 2;
   }
   // Copy tag
   m.myCache.cblocks[cache_index].tag = tag;
@@ -272,8 +279,9 @@ void copyblock(int cache_index, int mem_index, int tag)
 int valid_check(int cache_set_index, int n, int tag)
 {
   
-  for (int i = cache_set_index; i < n; i++)
+  for (int i = cache_set_index; i < n; i++)   // cache_set_index is 0 for fully associative
   {
+    clockX += 2;
     if (m.myCache.cblocks[i].valid == 1)
     {
       // check the tag
@@ -305,6 +313,7 @@ int search_replace(int start, int n)
     {
       //printf("Switch\t");
       LRU = m.myCache.cblocks[i].last_used;
+      clockX += 2;
       index=i;
     }
   }
