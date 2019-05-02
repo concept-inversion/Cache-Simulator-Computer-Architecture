@@ -6,7 +6,7 @@ int cache_org;
 extern Memory m;
 extern MainMem mm;
 int SETS_IN_CACHE = 4;
-int COUNTER=0;
+unsigned int COUNTER=0;
 void resetClock()
 {
   clockX = 0;
@@ -51,7 +51,7 @@ int getData(int address) // load
   // mm is the main memory
   // m is the cache
   int data, block, index;
-  //printf("Getdata\t");
+  //printf("\nGetdata\t");
   //printf("Add: %-5d\t", address);
   switch (cache_org)
   {
@@ -256,6 +256,7 @@ void copyblock(int cache_index, int mem_index, int tag)
   for (int i = 0; i < 4; i++)
   {
     m.myCache.cblocks[cache_index].data[i] = mm.blocks[mem_index].data[i];
+    clockX += 2;
   }
   // Copy tag
   m.myCache.cblocks[cache_index].tag = tag;
@@ -281,7 +282,7 @@ int valid_check(int cache_set_index, int n, int tag)
         //printf("Hit:%d\n", i);
         if(cache_org!=DIRECT)
         {  COUNTER+=1;
-          m.myCache.cblocks[cache_set_index+i].last_used= COUNTER;
+          m.myCache.cblocks[i].last_used= COUNTER;
         }
         //printf("LRU:%-4d\t",m.myCache.cblocks[cache_set_index+i].last_used);
         return 1;
@@ -293,11 +294,10 @@ int valid_check(int cache_set_index, int n, int tag)
 
 int search_replace(int start, int n)
 {
-  int index=start;
+  int index=start;                                                            // Temp value to store the index for the minimum value
   //printf("Start: %d, End: %d\t",start,n);
-  int LRU = m.myCache.cblocks[start].last_used;
+  int LRU = m.myCache.cblocks[start].last_used;                             // Temp variable to keep the least Recently used value for comparision
   // find the minimum value
-  //printf("Start:%-6d",m.myCache.cblocks[start].last_used);
   for (int i = (start); i < n; i++)
   {
     //printf("Each:%-3d\t",m.myCache.cblocks[i].last_used);
@@ -308,9 +308,8 @@ int search_replace(int start, int n)
       index=i;
     }
   }
-  
-  //printf("LRU:%d, Replace block= %d\t",m.myCache.cblocks[LRU].last_used,index);
-  //printf("Replace block:%-5d\n",index);
+  //printf("LRU:%d, Replace block= %d\t",m.myCache.cblocks[index].last_used,index);
+
   return index;
 }
 
