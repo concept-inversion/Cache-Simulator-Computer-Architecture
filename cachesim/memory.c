@@ -6,6 +6,7 @@ int cache_org;
 extern Memory m;
 extern MainMem mm;
 int SETS_IN_CACHE = 4;
+int status=0;
 unsigned int COUNTER=0;
 void resetClock()
 {
@@ -62,37 +63,31 @@ int getData(int address) // load
     printf("");
     int main_block_index = address / WORDS_PER_BLOCK;           // gives the block address of the main memory
     int cache_block_index = main_block_index % BLOCKS_IN_CACHE; // gives the block position of data in the cache
-    int offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
+    int offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a block
     int tag = address / WORDS_PER_BLOCK;
     //printf("Tag: %d\t", tag);
     //check if the data is valid in cache
     clockX += 2;    // for cache access
     if (m.myCache.cblocks[cache_block_index].valid != 1)
     {
-      // copy data to cache
-      //printf("Cache empty at %d\n", cache_block_index);
-      
+      // cache is empty
       copyblock(cache_block_index, main_block_index, tag); // copy the data to cache from main memory
-      
-      numMisses += 1;
+      data= m.myCache.cblocks[cache_block_index].data[offset];   // return the data
+      numMisses += 1; 
     }
     // check for tag
     else
     {
-      //printf("check tag at %d\t", cache_block_index);
       if (tag == m.myCache.cblocks[cache_block_index].tag)
-      {
-        //printf("Hit\n");
-        
-        return m.myCache.cblocks[cache_block_index].data[offset];
+      { 
+        // Data found in cache
+        data= m.myCache.cblocks[cache_block_index].data[offset];   // return the data
       }
       else
       {
-        //printf("MIss\n");
-        // replace the block;
-        
+        // replace the block; 
         copyblock(cache_block_index,main_block_index,tag);
-        //clockX+= 2;    // for cache access
+        data= m.myCache.cblocks[cache_block_index].data[offset];   // return the data
         numMisses += 1;
       }
     }
@@ -100,68 +95,60 @@ int getData(int address) // load
     break;
 
   case TWOWAY:
-    
     main_block_index = address / WORDS_PER_BLOCK;           // gives the block address of the main memory
     int cache_set_index = main_block_index % SETS_IN_CACHE; // gives the block position of data in the cache
-    offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
+    offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a block
     tag = address / WORDS_PER_BLOCK;
-    //printf("set:%-5d\t", cache_set_index);
     //check if the data is valid in cache
-    if (valid_check(cache_set_index*2, cache_set_index*2+2, tag) == 0)
+    status=valid_check(cache_set_index*2, cache_set_index*2+2, tag);
+    if ( status== 0)
     {
-      // find the position to replace
-      //printf("Miss\t");
-      int pos = search_replace(cache_set_index*2, cache_set_index*2+2);
-      copyblock(pos,main_block_index,tag);
+      // Address not found in cache. 
+      int pos = search_replace(cache_set_index*2, cache_set_index*2+2);   //Find the position to replace
+      copyblock(pos,main_block_index,tag);                                // copy the block from main memory to cache
+      data=m.myCache.cblocks[pos].data[offset];                           // return the data
       clockX += 100;
       numMisses+=1;
     }
 
-    // check for tag
-    else
+    
+    else // Address found in the cache
     {
-      
-      // return the data from cache TODO
-      clockX += 2;
+      data=m.myCache.cblocks[status].data[offset];                           // return the data
+
     }
     break;
 
   case FULLY:
     // Implement fully associative
     main_block_index = address / WORDS_PER_BLOCK; // gives the block address of the main memory
-    offset = address % WORDS_PER_BLOCK;           // gives the exact position of address within a
-    tag = address / WORDS_PER_BLOCK;
+    offset = address % WORDS_PER_BLOCK;           // gives the exact position of address within a block
+    tag = address / WORDS_PER_BLOCK;              // gives the tag
     //check if the data is valid in cache
-    if (valid_check(0, BLOCKS_IN_CACHE, tag) == 0)
+    status= valid_check(0, BLOCKS_IN_CACHE, tag);
+    if (status== 0)
     {
-      // find the position to replace
-      //printf("Miss\t");
-      int pos = search_replace(0, BLOCKS_IN_CACHE);
+     
+      int pos = search_replace(0, BLOCKS_IN_CACHE);      // find the position to replace
       copyblock(pos,main_block_index,tag);
+      data=m.myCache.cblocks[pos].data[offset];          // return the data
       clockX += 100;
       numMisses+=1;
     }
 
-    // check for tag
-    else
+    else    // data found in cache
     {
-      // return the data from cache TODO
-      clockX += 2;
-      //printf("Hit\n");
+      data=m.myCache.cblocks[status].data[offset];          // return the data
+      
     }
     break;
 
-  } // implement here
+  } 
   return data;
 }
 
 void putData(int address, int value) // store
 {
-
-  
-  // convert address to hex
-  //printf("\nPutdata\t");
-  //printf("Add: %-5d\t", address);
   
   if (cache_org==DIRECT)
   {
@@ -170,34 +157,28 @@ void putData(int address, int value) // store
     int cache_block_index = main_block_index % BLOCKS_IN_CACHE; // gives the block position of data in the cache
     int offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
     int tag = address / WORDS_PER_BLOCK;
-    
-    //check if the data is valid in cache
+    clockX+= 2;                                                 // for cache access
 
+    //check if the data is valid in cache
     if (m.myCache.cblocks[cache_block_index].valid != 1)
     {
-      // copy data to cache
-      clockX+= 2;    // for cache access
-      clockX+=100; // for write to main memory
-      copyblock(cache_block_index, main_block_index, tag);
+      mm.blocks[main_block_index].data[offset]=value;
+      clockX+=100;                                                // for write to main memory
+      copyblock(cache_block_index, main_block_index, tag);        // copy to the cache
       numMisses+= 1;
       
     }
-    // check for tag
+    // Data valid, check for tag
     else
     {
-      
       if (tag == m.myCache.cblocks[cache_block_index].tag)
       {
-        clockX += 2;
         m.myCache.cblocks[cache_block_index].data[offset]=value;
-        // write blcok to main memory
+        mm.blocks[main_block_index].data[offset]=value;           // write block to main memory
         clockX += 100;
       }
       else
-      {
-        //printf("MIss\n");
-        
-        clockX += 2; // for cache read
+      { 
         clockX+=100; // for write to main memory
         mm.blocks[main_block_index].data[offset]=value;
         copyblock(cache_block_index, main_block_index, tag); // copy main memory to cache
@@ -212,21 +193,24 @@ void putData(int address, int value) // store
     int cache_set_index = main_block_index % SETS_IN_CACHE; // gives the block position of data in the cache
     int offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
     int tag = address / WORDS_PER_BLOCK;
-    //printf("set:%-5d\t", cache_set_index);
     //check if the data is valid in cache
-    if (valid_check(cache_set_index*2, cache_set_index*2+2, tag) == 0)
+    status=valid_check(cache_set_index*2, cache_set_index*2+2, tag);
+    if (status== 0)
     {
-      // find the position to replace
-      //printf("Miss\t");
-      int pos = search_replace(cache_set_index*2, cache_set_index*2+2);
-      copyblock(pos,main_block_index,tag);
-      m.myCache.cblocks[pos].data[offset] = value;
+      
+      mm.blocks[main_block_index].data[offset]=value;                           // copy data to main memory
+      clockX+=100;
+      int pos = search_replace(cache_set_index*2, cache_set_index*2+2);         // find the position to replace
+      copyblock(pos,main_block_index,tag);                                      // copy block from main memory to cache
       numMisses+=1;
     }
     // check for tag
     else
     {
-      //clockX += 2;
+      m.myCache.cblocks[status].data[offset]=value;                              // write to cache
+      clockX+=2;
+      mm.blocks[main_block_index].data[offset]=value;                            // write to main memory
+      clockX+=100;
     }
   }
 
@@ -237,21 +221,24 @@ void putData(int address, int value) // store
     int offset = address % WORDS_PER_BLOCK;           // gives the exact position of address within a
     int tag = address / WORDS_PER_BLOCK;
     //check if the data is valid in cache
-    if (valid_check(0, BLOCKS_IN_CACHE, tag) == 0)
+    status=valid_check(0, BLOCKS_IN_CACHE, tag);
+    if (status== 0)
     {
-      // find the position to replace
-      //printf("Miss\t");
-      int pos = search_replace(0, BLOCKS_IN_CACHE);
-      copyblock(pos,main_block_index,tag);
-      
+      mm.blocks[main_block_index].data[offset]=value;                           // copy data to main memory
+      clockX+=100;
+      int pos = search_replace(0, BLOCKS_IN_CACHE);         // find the position to replace
+      copyblock(pos,main_block_index,tag);                                      // copy block from main memory to cache
+      numMisses+=1;
     }
 
-    // check for tag
+    
     else
     {
-      // return the data from cache TODO
-      //printf("Hit\n");
-      //clockX += 2;
+      m.myCache.cblocks[status].data[offset]=value;                              // write to cache
+      clockX+=2;
+      mm.blocks[main_block_index].data[offset]=value;                            // write to main memory
+      clockX+=100;
+
     }
   }
   
@@ -273,8 +260,12 @@ void copyblock(int cache_index, int mem_index, int tag)
     COUNTER+=1;
     m.myCache.cblocks[cache_index].last_used= COUNTER;
   }
-  //printf("LRU:%-4d\n",m.myCache.cblocks[cache_index].last_used);
 }
+
+/*
+A function to check if the address is on the cache or not. It checks the valid bit first and then compares the tag. If the tag matches,
+it returns the block where the data is present. 
+*/
 
 int valid_check(int cache_set_index, int n, int tag)
 {
@@ -287,12 +278,10 @@ int valid_check(int cache_set_index, int n, int tag)
       // check the tag
       if (m.myCache.cblocks[i].tag == tag)
       {
-        //printf("Hit:%d\n", i);
         if(cache_org!=DIRECT)
         {  COUNTER+=1;
           m.myCache.cblocks[i].last_used= COUNTER;
         }
-        //printf("LRU:%-4d\t",m.myCache.cblocks[cache_set_index+i].last_used);
         return 1;
       }
     }
@@ -300,28 +289,30 @@ int valid_check(int cache_set_index, int n, int tag)
   return 0;
 }
 
+/*
+  This function is used by associative mapping only. 
+  This functions returns a position where a new block could be copied to the cache. It uses the LRU bit to replace a block. 
+*/
+
 int search_replace(int start, int n)
 {
   int index=start;                                                            // Temp value to store the index for the minimum value
-  //printf("Start: %d, End: %d\t",start,n);
   int LRU = m.myCache.cblocks[start].last_used;                             // Temp variable to keep the least Recently used value for comparision
   // find the minimum value
   for (int i = (start); i < n; i++)
   {
-    //printf("Each:%-3d\t",m.myCache.cblocks[i].last_used);
     if (m.myCache.cblocks[i].last_used < LRU)
     {
-      //printf("Switch\t");
       LRU = m.myCache.cblocks[i].last_used;
       clockX += 2;
       index=i;
     }
   }
-  //printf("LRU:%d, Replace block= %d\t",m.myCache.cblocks[index].last_used,index);
-
   return index;
 }
 
+
+/*A function to clear the Last used value for every block.*/
 void clearCache()
 {
   for (int i=0;i<BLOCKS_IN_CACHE;i++)

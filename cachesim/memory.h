@@ -12,6 +12,7 @@ extern unsigned int clockX;
 extern unsigned int numMisses;
 extern int cache_org;
 extern unsigned int COUNTER;
+extern int status;
 
 //=================
 //==  Constants
