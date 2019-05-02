@@ -244,6 +244,11 @@ void putData(int address, int value) // store
   
 }
 
+/*
+This function is used to copy a block from main memory to the cache. 
+It takes two arguments: block number in cache and block number in main memory of address.   
+*/
+
 void copyblock(int cache_index, int mem_index, int tag)
 {
   //copy data
@@ -301,14 +306,14 @@ int search_replace(int start, int n)
   // find the minimum value
   for (int i = (start); i < n; i++)
   {
-    if (m.myCache.cblocks[i].last_used < LRU)
+    if (m.myCache.cblocks[i].last_used < LRU)                                // If this block have less LRU value, then replace the index 
     {
       LRU = m.myCache.cblocks[i].last_used;
       clockX += 2;
       index=i;
     }
   }
-  return index;
+  return index;                                                             // returns the position to replace or write
 }
 
 
