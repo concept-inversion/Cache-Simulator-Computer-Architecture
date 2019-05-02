@@ -51,8 +51,8 @@ int getData(int address) // load
   // mm is the main memory
   // m is the cache
   int data, block, index;
-  printf("Getdata\t");
-  printf("Add: %-5d\t", address);
+  //printf("Getdata\t");
+  //printf("Add: %-5d\t", address);
   switch (cache_org)
   {
   case DIRECT:
@@ -103,12 +103,12 @@ int getData(int address) // load
     int cache_set_index = main_block_index % SETS_IN_CACHE; // gives the block position of data in the cache
     offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
     tag = address / WORDS_PER_BLOCK;
-    printf("set:%-5d\t", cache_set_index);
+    //printf("set:%-5d\t", cache_set_index);
     //check if the data is valid in cache
     if (valid_check(cache_set_index*2, cache_set_index*2+2, tag) == 0)
     {
       // find the position to replace
-      printf("Miss\t");
+      //printf("Miss\t");
       int pos = search_replace(cache_set_index*2, cache_set_index*2+2);
       copyblock(pos,main_block_index,tag);
       clockX += 100;
@@ -158,8 +158,8 @@ void putData(int address, int value) // store
 
   
   // convert address to hex
-  printf("\nPutdata\t");
-  printf("Add: %-5d\t", address);
+  //printf("\nPutdata\t");
+  //printf("Add: %-5d\t", address);
   
   if (cache_org==DIRECT)
   {
@@ -204,12 +204,12 @@ void putData(int address, int value) // store
     int cache_set_index = main_block_index % SETS_IN_CACHE; // gives the block position of data in the cache
     int offset = address % WORDS_PER_BLOCK;                     // gives the exact position of address within a
     int tag = address / WORDS_PER_BLOCK;
-    printf("set:%-5d\t", cache_set_index);
+    //printf("set:%-5d\t", cache_set_index);
     //check if the data is valid in cache
     if (valid_check(cache_set_index*2, cache_set_index*2+2, tag) == 0)
     {
       // find the position to replace
-      printf("Miss\t");
+      //printf("Miss\t");
       int pos = search_replace(cache_set_index*2, cache_set_index*2+2);
       copyblock(pos,main_block_index,tag);
       m.myCache.cblocks[pos].data[offset] = value;
@@ -265,7 +265,7 @@ void copyblock(int cache_index, int mem_index, int tag)
     COUNTER+=1;
     m.myCache.cblocks[cache_index].last_used= COUNTER;
   }
-  printf("LRU:%-4d\n",m.myCache.cblocks[cache_index].last_used);
+  //printf("LRU:%-4d\n",m.myCache.cblocks[cache_index].last_used);
 }
 
 int valid_check(int cache_set_index, int n, int tag)
@@ -278,7 +278,7 @@ int valid_check(int cache_set_index, int n, int tag)
       // check the tag
       if (m.myCache.cblocks[i].tag == tag)
       {
-        printf("Hit:%d\n", i);
+        //printf("Hit:%d\n", i);
         if(cache_org!=DIRECT)
         {  COUNTER+=1;
           m.myCache.cblocks[cache_set_index+i].last_used= COUNTER;
@@ -309,7 +309,7 @@ int search_replace(int start, int n)
     }
   }
   
-  printf("LRU:%d, Replace block= %d\t",m.myCache.cblocks[LRU].last_used,index);
+  //printf("LRU:%d, Replace block= %d\t",m.myCache.cblocks[LRU].last_used,index);
   //printf("Replace block:%-5d\n",index);
   return index;
 }
