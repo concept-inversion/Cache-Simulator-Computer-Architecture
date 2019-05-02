@@ -107,7 +107,6 @@ int getData(int address) // load
       int pos = search_replace(cache_set_index*2, cache_set_index*2+2);   //Find the position to replace
       copyblock(pos,main_block_index,tag);                                // copy the block from main memory to cache
       data=m.myCache.cblocks[pos].data[offset];                           // return the data
-      clockX += 100;
       numMisses+=1;
     }
 
@@ -128,18 +127,16 @@ int getData(int address) // load
     status= valid_check(0, BLOCKS_IN_CACHE, tag);
     if (status== 0)
     {
-     
+      // Address not found
       int pos = search_replace(0, BLOCKS_IN_CACHE);      // find the position to replace
       copyblock(pos,main_block_index,tag);
       data=m.myCache.cblocks[pos].data[offset];          // return the data
-      clockX += 100;
       numMisses+=1;
     }
 
     else    // data found in cache
     {
       data=m.myCache.cblocks[status].data[offset];          // return the data
-      
     }
     break;
 
@@ -204,7 +201,6 @@ void putData(int address, int value) // store
       copyblock(pos,main_block_index,tag);                                      // copy block from main memory to cache
       numMisses+=1;
     }
-    // check for tag
     else
     {
       m.myCache.cblocks[status].data[offset]=value;                              // write to cache
@@ -216,7 +212,6 @@ void putData(int address, int value) // store
 
   else  // Fully
   {
-
     int main_block_index = address / WORDS_PER_BLOCK; // gives the block address of the main memory
     int offset = address % WORDS_PER_BLOCK;           // gives the exact position of address within a
     int tag = address / WORDS_PER_BLOCK;
@@ -231,14 +226,12 @@ void putData(int address, int value) // store
       numMisses+=1;
     }
 
-    
     else
     {
       m.myCache.cblocks[status].data[offset]=value;                              // write to cache
       clockX+=2;
       mm.blocks[main_block_index].data[offset]=value;                            // write to main memory
       clockX+=100;
-
     }
   }
   
@@ -283,10 +276,8 @@ int valid_check(int cache_set_index, int n, int tag)
       // check the tag
       if (m.myCache.cblocks[i].tag == tag)
       {
-        if(cache_org!=DIRECT)
-        {  COUNTER+=1;
+          COUNTER+=1;
           m.myCache.cblocks[i].last_used= COUNTER;
-        }
         return 1;
       }
     }
@@ -306,10 +297,10 @@ int search_replace(int start, int n)
   // find the minimum value
   for (int i = (start); i < n; i++)
   {
+    clockX += 2;
     if (m.myCache.cblocks[i].last_used < LRU)                                // If this block have less LRU value, then replace the index 
     {
       LRU = m.myCache.cblocks[i].last_used;
-      clockX += 2;
       index=i;
     }
   }
